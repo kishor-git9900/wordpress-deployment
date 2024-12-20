@@ -1,0 +1,31 @@
+name: Deploy WordPress Website
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key for deployment
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
+      - name: Sync WordPress files to VPS
+        run: |
+          rsync -avz --exclude '.git' --exclude 'node_modules' ./ ubuntu@ip-172-31-35-193:/var/www/wordpress
+
+      - name: Restart web server on VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@ip-172-31-35-193 "sudo systemctl restart nginx" # Or apache2, depending on your server setup
